@@ -34,14 +34,14 @@ def check_release_exists(version):
 
 def download_and_extract(url, extract_dir):
     """Download a ZIP file and extract its contents."""
-    print(f"Downloading {url}...")
+    print(f" - Downloading {url}...")
     
     # Download to temporary file
     with tempfile.NamedTemporaryFile(delete=False, suffix='.zip') as tmp_file:
         tmp_path = tmp_file.name
         urlretrieve(url, tmp_path)
     
-    print(f"Extracting to {extract_dir}...")
+    print(f"   - Extracting to {extract_dir}...")
     
     # Extract ZIP file
     with zipfile.ZipFile(tmp_path, 'r') as zip_ref:
@@ -52,7 +52,7 @@ def download_and_extract(url, extract_dir):
     
     # List extracted files
     extracted_files = list(Path(extract_dir).glob('*.exe'))
-    print(f"Extracted files: {[f.name for f in extracted_files]}")
+    print(f"   - Extracted files: {[f.name for f in extracted_files]}")
     
     return extracted_files
 
@@ -60,10 +60,10 @@ def create_github_release(version, installer_files):
     """Create a GitHub release and upload installer files."""
     tag = f"v{version}"
     
-    print(f"\nCreating release {tag}...")
+    print(f" - Creating release {tag}...")
     
     # Create the release
-    cmd = f'gh release create "{tag}" --title "Firebird ODBC Driver {version}" --notes "Firebird ODBC Driver version {version}\n\nThis release contains:\n- Windows x86 (32-bit) installer\n- Windows x64 (64-bit) installer\n\nOriginal distribution repackaged for easier access via GitHub API."'
+    cmd = f'gh release create "{tag}" --title "Firebird ODBC Driver {version}" --notes "Firebird ODBC Driver version {version}."'
     
     stdout, stderr, returncode = run_command(cmd, check=False)
     
@@ -71,19 +71,19 @@ def create_github_release(version, installer_files):
         print(f"Error creating release: {stderr}")
         return False
     
-    print(f"Release created: {stdout}")
+    print(f"   - Release created: {stdout}")
     
     # Upload each installer file as an asset
     for installer_file in installer_files:
-        print(f"Uploading {installer_file.name}...")
+        print(f"   - Uploading {installer_file.name}...")
         cmd = f'gh release upload "{tag}" "{installer_file}"'
         stdout, stderr, returncode = run_command(cmd, check=False)
         
         if returncode != 0:
-            print(f"Error uploading {installer_file.name}: {stderr}")
+            print(f"✗ Error uploading {installer_file.name}: {stderr}")
             return False
         
-        print(f"Uploaded {installer_file.name}")
+        print(f"     - Uploaded {installer_file.name}")
     
     return True
 
@@ -115,13 +115,11 @@ def main():
     
     # Process each release
     for version, url in releases.items():
-        print(f"{'='*60}")
-        print(f"Processing version {version}")
-        print(f"{'='*60}")
+        print(f"\nProcessing version {version}")
         
         # Check if release already exists
         if check_release_exists(version):
-            print(f"Release v{version} already exists, skipping...")
+            print(f"✓ Release v{version} already exists, skipping...")
             continue
         
         # Create temporary directory for extraction
@@ -149,7 +147,7 @@ def main():
         
         print()
     
-    print("All releases processed.")
+    print("\nAll releases processed.")
 
 if __name__ == '__main__':
     main()
