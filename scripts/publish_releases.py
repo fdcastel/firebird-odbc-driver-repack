@@ -12,6 +12,13 @@ from pathlib import Path
 from urllib.request import urlretrieve
 import tempfile
 import shutil
+import re
+
+def parse_version(version_string):
+    """Parse version string into tuple of integers for comparison."""
+    # Extract numeric parts from version string
+    parts = re.findall(r'\d+', version_string)
+    return tuple(int(part) for part in parts)
 
 def run_command(cmd, check=True):
     """Run a shell command and return output."""
@@ -113,13 +120,19 @@ def main():
     
     print(f"Found {len(releases)} release(s) in releases.json\n")
     
-    # Process each release
-    for version, url in releases.items():
-        print(f"\nProcessing version {version}")
+    # Sort releases by version number (lowest to highest)
+    # This ensures the highest version is published last and becomes "Latest"
+    sorted_versions = sorted(releases.keys(), key=parse_version)
+    print(f"Processing order: {' -> '.join(sorted_versions)}\n")
+    
+    # Process each release in sorted order
+    for ver in sorted_versions:
+        url = releases[ver]
+        print(f"\nProcessing version {ver}")
         
         # Check if release already exists
-        if check_release_exists(version):
-            print(f"✓ Release v{version} already exists, skipping...")
+        if check_release_exists(ver):
+            print(f"✓ Release v{ver} already exists, skipping...")
             continue
         
         # Create temporary directory for extraction
@@ -129,19 +142,19 @@ def main():
                 installer_files = download_and_extract(url, temp_dir)
                 
                 if not installer_files:
-                    print(f"Warning: No installer files found for version {version}")
+                    print(f"Warning: No installer files found for version {ver}")
                     continue
                 
                 # Create GitHub release
-                success = create_github_release(version, installer_files)
+                success = create_github_release(ver, installer_files)
                 
                 if success:
-                    print(f"✓ Successfully published release v{version}")
+                    print(f"✓ Successfully published release v{ver}")
                 else:
-                    print(f"✗ Failed to publish release v{version}")
+                    print(f"✗ Failed to publish release v{ver}")
                     
             except Exception as e:
-                print(f"Error processing version {version}: {e}")
+                print(f"Error processing version {ver}: {e}")
                 import traceback
                 traceback.print_exc()
         
